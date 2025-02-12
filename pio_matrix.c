@@ -13,16 +13,13 @@
 #include "led_rgb/led_rgb.h"
 #include "joystick/joystick.h"
 
-#define SPEED 1
 #define resolution_ADC 4096
 #define WIDTH_RECT 8
 #define HEIGHT_RECT 8
 
-#define Botao_A 5 
-#define Botao_B 6
-
 #define PWM_BLUE_LED 12
 #define PWM_RED_LED 13
+
 #define FREQUENCY 100
 #define F_CLOCK 125000000
 #define WRAP 65358
@@ -77,32 +74,8 @@ int main() {
   setup_led_RGB();
   setup_display_oled();
 
-  //habilitar o pino GPIO como PWM
-  gpio_set_function(PWM_BLUE_LED, GPIO_FUNC_PWM);
-  //obter o canal PWM da GPIO
-  uint slice = pwm_gpio_to_slice_num(PWM_BLUE_LED); 
-  //definir o valor de wrap
-  pwm_set_wrap(slice, WRAP);
-  // Realiza o cálculo de frequência
-  compute_pwm_frequency(F_CLOCK, WRAP, D_I, D_F);
-  //define o divisor de clock do PWM
-  pwm_set_clkdiv(slice, D_I + (D_F) / 10.0);
-  //habilita o pwm no slice correspondente
-  pwm_set_enabled(slice, true);
-
-  //habilitar o pino GPIO como PWM
-  gpio_set_function(PWM_RED_LED, GPIO_FUNC_PWM);
-  //obter o canal PWM da GPIO
-  slice = pwm_gpio_to_slice_num(PWM_RED_LED); 
-  //definir o valor de wrap
-  pwm_set_wrap(slice, WRAP);
-  // Realiza o cálculo de frequência
-  compute_pwm_frequency(F_CLOCK, WRAP, D_I, D_F);
-  //define o divisor de clock do PWM
-  pwm_set_clkdiv(slice, D_I + (D_F) / 10.0);
-  //habilita o pwm no slice correspondente
-  pwm_set_enabled(slice, true);
-
+  setup_pwm(PWM_BLUE_LED, WRAP, F_CLOCK, D_I, D_F);
+  setup_pwm(PWM_RED_LED, WRAP, F_CLOCK, D_I, D_F);
 
   gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
   gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
@@ -110,11 +83,9 @@ int main() {
   
   while (true) {
     // Seleciona o ADC para eixo X. O pino 26 como entrada analógica
-    adc_select_input(0); 
-    adc_value_x = adc_read();
+    adc_value_x = read_X();
     // Seleciona o ADC para eixo Y. O pino 27 como entrada analógica
-    adc_select_input(1); 
-    adc_value_y = adc_read();
+    adc_value_y = read_Y();
 
     uint16_t aux = adc_value_x;
     adc_value_x = adc_value_y;
@@ -139,8 +110,6 @@ int main() {
       increment_y = - (HEIGHT / 2 - HEIGHT_RECT / 2);
     }
 
-    // printf("X: %s | Y: %s | IncrementoX: %d | IncrementoY: %d\n", str_x, str_y, increment_x, increment_y);
-
     if(allow_pwm_changes) {
       float percentage_x;
       if(increment_x < 0) {
@@ -155,8 +124,6 @@ int main() {
         percentage_y = + (increment_y * 1.0) / (HEIGHT / 2 - HEIGHT_RECT / 2);
       }
 
-      // printf("percentage_x: %.2f | percentage_y: %.2f\n", percentage_x, percentage_y);
-      
       //definir o ciclo de trabalho (duty cycle) do pwm
       pwm_set_gpio_level(PWM_RED_LED, WRAP * percentage_x);
       pwm_set_gpio_level(PWM_BLUE_LED, WRAP * percentage_y);
@@ -165,7 +132,7 @@ int main() {
     // Atualiza o conteúdo do display
     display_fill(false);
     if(green_led_state) {
-      // Desenha um retângulo a mais
+      // Desenha um retângulo a mais n borda
       if(true) {
         display_draw_rectangle(3, 3, 123, 59, cor, !cor);
       }

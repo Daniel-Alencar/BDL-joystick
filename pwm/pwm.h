@@ -33,3 +33,18 @@ double compute_pwm_frequency(uint32_t f_clock, uint32_t wrap, uint32_t d_i, uint
     printf("Frequência calculada: %lf\n", f_clock / ((d_i + d_f / 16.0) * (wrap + 1)));
     return f_clock / ((d_i + d_f / 16.0) * (wrap + 1));
 }
+
+void setup_pwm(uint gpio, uint64_t wrap, uint64_t f_clock, uint d_i, uint d_f) {
+  //habilitar o pino GPIO como PWM
+  gpio_set_function(gpio, GPIO_FUNC_PWM);
+  //obter o canal PWM da GPIO
+  uint slice = pwm_gpio_to_slice_num(gpio); 
+  //definir o valor de wrap
+  pwm_set_wrap(slice, wrap);
+  // Realiza o cálculo de frequência
+  compute_pwm_frequency(f_clock, wrap, d_i, d_f);
+  //define o divisor de clock do PWM
+  pwm_set_clkdiv(slice, d_i + (d_f) / 10.0);
+  //habilita o pwm no slice correspondente
+  pwm_set_enabled(slice, true);
+}
