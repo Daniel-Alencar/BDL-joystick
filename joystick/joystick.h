@@ -5,8 +5,6 @@
 // GPIO para botão do Joystick
 #define JOYSTICK_BUTTON 22
 
-#define chanel
-
 void setup_joystick() {
     adc_init();
     adc_gpio_init(JOYSTICK_X_PIN);

@@ -38,7 +38,10 @@ void gpio_irq_handler(uint gpio, uint32_t events) {
 
   // Verifica se passou tempo suficiente desde o último evento
   // 200 ms de debouncing
-  if (current_time - last_time > 100000) {
+  if (current_time - last_time > 200000) {
+    // Atualiza o tempo do último evento
+    last_time = current_time;
+
     if(gpio == BUTTON_A) {
       printf("Botão A pressionado\n");
       set_blue(false);
