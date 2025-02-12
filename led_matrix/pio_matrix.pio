@@ -1,0 +1,62 @@
+.program pio_matrix
+
+.wrap_target
+    out x, 1
+    jmp !x do_zero
+do_one:
+    set pins, 1 [4]
+    jmp cont
+do_zero:
+    set pins, 1 [2]
+    set pins, 0 [2]
+cont:
+    set pins, 0 [1]
+.wrap
+
+
+%c-sdk {
+    static inline void pio_matrix_program_init(
+        PIO pio, uint sm, uint offset, uint pin
+    ) {
+        // This line gets the default configuration for the pio_matrix
+        // program from the assembled PIO program data, 
+        // using the provided offset into the PIO instruction memory
+        pio_sm_config c = pio_matrix_program_get_default_config(offset);
+
+        // Set pin to be part of set output group, i.e. set by set instruction.
+        // This configures the state machine's set pin group. The pin argument specifies which GPIO pin will be controlled, and the 1 indicates that a single pin is being configured
+        sm_config_set_set_pins(&c, pin, 1);
+
+        // Attach pio to the GPIO
+        // This line initializes the specified GPIO pin, setting its function to be controlled by the PIO
+        pio_gpio_init(pio, pin);
+
+        // Set pin direction to output at the PIO
+        // This sets the pin direction to output at the PIO, meaning the PIO will drive the pin. The last argument, true, means to set the pin direction to output, and false would set the pin direction to input
+        pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+
+        // Set pio clock to 8MHz, giving 10 cycles per LED binary digit
+        float div = clock_get_hz(clk_sys) / 8000000.0;
+
+        // This applies the calculated clock divider to the state machine's configuration. This determines how fast the PIO executes the instructions
+        sm_config_set_clkdiv(&c, div);
+
+        // Give all the FIFO space to TX (not using RX)
+        // This configures the FIFO so that all the FIFO space is allocated to the TX FIFO, since this application does not need the RX FIFO
+        sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+
+        // Shift to the left, use autopull, next pull threshold 24 bits
+        // This configures the output shift register (OSR). The false argument indicates that bits are shifted to the left (MSB first), the true argument enables autopull, which means that a new value is automatically pulled from the TX FIFO when the OSR is empty, and the 24 specifies a threshold for how many bits should be pulled from the TX FIFO to the OSR
+        sm_config_set_out_shift(&c, false, true, 24);
+
+        // Set sticky--continue to drive value from last set/out. Other stuff off.
+        // This sets the output pin behavior when the set or out instruction is not being executed, this is called "sticky" mode. Setting this to true will cause the pin to continue to output the last value that was set, which is important for maintaining a high or low output between the clock cycles when the set instruction is not running. The other two arguments determine whether the output should be inverted or tristated, which is not enabled in this case
+        sm_config_set_out_special(&c, true, false, false);
+
+        // Load configuration, and jump to the start of the program
+        pio_sm_init(pio, sm, offset, &c);
+        
+        // enable this pio state machine
+        pio_sm_set_enabled(pio, sm, true);
+    }
+%}
