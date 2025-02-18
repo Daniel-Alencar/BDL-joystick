@@ -85,46 +85,50 @@ int main() {
   gpio_set_irq_enabled_with_callback(JOYSTICK_BUTTON, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
   
   while (true) {
-    // Seleciona o ADC para eixo X. O pino 26 como entrada analógica
+    // Seleciona o ADC para eixo X
     adc_value_x = read_X();
-    // Seleciona o ADC para eixo Y. O pino 27 como entrada analógica
+    // Seleciona o ADC para eixo Y
     adc_value_y = read_Y();
 
+    // Inverte os eixos
     uint16_t aux = adc_value_x;
     adc_value_x = adc_value_y;
     adc_value_y = aux;
 
-    sprintf(str_x, "%d", adc_value_x);  // Converte o inteiro em string
-    sprintf(str_y, "%d", adc_value_y);  // Converte o inteiro em string
+    // Converte os inteiros em string
+    sprintf(str_x, "%d", adc_value_x);
+    sprintf(str_y, "%d", adc_value_y);
 
-    int increment_x = adc_value_x - (2118);
-    increment_x = increment_x / 32.0;
-    int increment_y = adc_value_y - (1997);
-    increment_y = increment_y / 64.0;
+    // Calcula o valor do incrementos x e y para a posição do retângulo
+    int increment_x = adc_value_x - (JOYSTICK_MIDDLE_X);
+    increment_x = increment_x / (HEIGHT / 2.0);
+    int increment_y = adc_value_y - (JOYSTICK_MIDDLE_Y);
+    increment_y = increment_y / (WIDTH / 2.0);
 
-    if(increment_x >  WIDTH / 2 - WIDTH_RECT / 2) {
-      increment_x = WIDTH / 2 - WIDTH_RECT / 2;
-    } else if(increment_x < - (WIDTH / 2 - WIDTH_RECT / 2)) {
-      increment_x = - (WIDTH / 2 - WIDTH_RECT / 2);
+    if(increment_x >  position_rectangle_x) {
+      increment_x = position_rectangle_x;
+    } else if(increment_x < - (position_rectangle_x)) {
+      increment_x = - (position_rectangle_x);
     }
-    if(increment_y > HEIGHT / 2 - HEIGHT_RECT / 2) {
-      increment_y = HEIGHT / 2 - HEIGHT_RECT / 2;
-    } else if(increment_y < - (HEIGHT / 2 - HEIGHT_RECT / 2)) {
-      increment_y = - (HEIGHT / 2 - HEIGHT_RECT / 2);
+    if(increment_y > position_rectangle_y) {
+      increment_y = position_rectangle_y;
+    } else if(increment_y < - (position_rectangle_y)) {
+      increment_y = - (position_rectangle_y);
     }
 
     if(allow_pwm_changes) {
+      // Calcula o valor do duty cycle para os leds
       float percentage_x;
       if(increment_x < 0) {
-        percentage_x = - (increment_x * 1.0) / (WIDTH / 2 - WIDTH_RECT / 2);
+        percentage_x = - (increment_x * 1.0) / (position_rectangle_x);
       } else {
-        percentage_x = + (increment_x * 1.0) / (WIDTH / 2 - WIDTH_RECT / 2);
+        percentage_x = + (increment_x * 1.0) / (position_rectangle_x);
       }
       float percentage_y;
       if(increment_y < 0) {
-        percentage_y = - (increment_y * 1.0) / (HEIGHT / 2 - HEIGHT_RECT / 2);
+        percentage_y = - (increment_y * 1.0) / (position_rectangle_y);
       } else {
-        percentage_y = + (increment_y * 1.0) / (HEIGHT / 2 - HEIGHT_RECT / 2);
+        percentage_y = + (increment_y * 1.0) / (position_rectangle_y);
       }
 
       //definir o ciclo de trabalho (duty cycle) do pwm
@@ -135,12 +139,11 @@ int main() {
     // Atualiza o conteúdo do display
     display_fill(false);
     if(green_led_state) {
-      // Desenha um retângulo a mais n borda
-      if(true) {
-        display_draw_rectangle(3, 3, 123, 59, cor, !cor);
-      }
+      // Desenha um retângulo a mais na borda
+      display_draw_rectangle(1, 1, 126, 62, cor, !cor);
+      display_draw_rectangle(2, 2, 124, 60, cor, !cor);
     }
-    display_draw_rectangle(1, 1, 127, 63, cor, !cor);
+    display_draw_rectangle(0, 0, 128, 64, cor, !cor);
     display_draw_rectangle(
       position_rectangle_y - increment_y, 
       position_rectangle_x + increment_x, 

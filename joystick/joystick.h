@@ -5,6 +5,11 @@
 // GPIO para botão do Joystick
 #define JOYSTICK_BUTTON 22
 
+// Valor em repouso do eixo x
+#define JOYSTICK_MIDDLE_X 2118
+// Valor em repouso do eixo y
+#define JOYSTICK_MIDDLE_Y 1997
+
 void setup_joystick() {
     adc_init();
     adc_gpio_init(JOYSTICK_X_PIN);
