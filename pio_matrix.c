@@ -131,7 +131,7 @@ int main() {
         percentage_y = + (increment_y * 1.0) / (position_rectangle_y);
       }
 
-      //definir o ciclo de trabalho (duty cycle) do pwm
+      // Define o ciclo de trabalho (duty cycle) do pwm
       pwm_set_gpio_level(PWM_RED_LED, WRAP * percentage_x);
       pwm_set_gpio_level(PWM_BLUE_LED, WRAP * percentage_y);
     }
